@@ -3,6 +3,11 @@ from fastapi import FastAPI, HTTPException, Query
 app = FastAPI()
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 def compute(left: float, operator: str, right: float) -> float:
     if operator == "+":
         return left + right
