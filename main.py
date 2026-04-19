@@ -1,9 +1,10 @@
+import os
 from fastapi import FastAPI, HTTPException, Query
 import requests
 
 app = FastAPI()
 
-ALPHA_VANTAGE_API_KEY = "F8A032I0V1LHY1KN"
+ALPHA_VANTAGE_API_KEY = os.environ["ALPHA_VANTAGE_API_KEY"]
 
 
 @app.get("/health")
