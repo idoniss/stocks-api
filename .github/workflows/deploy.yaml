@@ -27,12 +27,12 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t us-central1-docker.pkg.dev/calculator-api-proj/cloud-run-source-deploy/calculator-api .
+          docker build -t us-central1-docker.pkg.dev/stocks-api-proj/cloud-run-source-deploy/stocks-api .
 
       - name: Push Docker image
         run: |
-          docker push us-central1-docker.pkg.dev/calculator-api-proj/cloud-run-source-deploy/calculator-api
+          docker push us-central1-docker.pkg.dev/stocks-api-proj/cloud-run-source-deploy/stocks-api
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy calculator-api --image=us-central1-docker.pkg.dev/calculator-api-proj/cloud-run-source-deploy/calculator-api --region=us-central1 --platform=managed --allow-unauthenticated --min-instances=0 --port=8080
+          gcloud run deploy stocks-api --image=us-central1-docker.pkg.dev/stocks-api-proj/cloud-run-source-deploy/stocks-api --region=us-central1 --platform=managed --allow-unauthenticated --min-instances=0 --port=8080
