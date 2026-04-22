@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 
-const API_URL = 'http://localhost:8080'
+const API_URL = 'https://stocks-api-41681714781.us-central1.run.app'
 
 function App() {
   const [symbol, setSymbol] = useState('')
