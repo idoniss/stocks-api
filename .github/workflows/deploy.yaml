@@ -27,7 +27,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t us-central1-docker.pkg.dev/calculator-api-proj/cloud-run-source-deploy/stocks-api .
+          docker build -t us-central1-docker.pkg.dev/calculator-api-proj/cloud-run-source-deploy/stocks-api backend/
 
       - name: Push Docker image
         run: |
