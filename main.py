@@ -3,6 +3,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 
+from agent.news_agent import app as news_agent_app
+
 app = FastAPI()
 
 app.add_middleware(
@@ -39,3 +41,9 @@ def get_stock_price(symbol: str):
         "change": f"{data['d']:.2f}",
         "change_percent": f"{data['dp']:.2f}%",
     }
+
+
+@app.get("/news/{symbol}")
+def get_news(symbol: str):
+    result = news_agent_app.invoke({"symbol": symbol})
+    return {"symbol": symbol.upper(), "summary": result["summary"]}
