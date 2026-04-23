@@ -58,6 +58,7 @@ function App() {
   return (
     <main>
       <h1>Stock Lookup</h1>
+      <p className="subtitle">Enter a ticker symbol to see its price — then get an AI-generated news summary.</p>
 
       <form onSubmit={handleSubmit}>
         <input

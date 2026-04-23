@@ -39,6 +39,13 @@ h1 {
   -webkit-text-fill-color: transparent;
 }
 
+.subtitle {
+  margin: -1rem 0 2rem;
+  color: var(--text-dim);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 form {
   display: flex;
   gap: 0.5rem;
