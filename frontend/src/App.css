@@ -23,7 +23,7 @@ body {
 }
 
 main {
-  max-width: 480px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 6rem 1.5rem 2rem;
 }
@@ -151,6 +151,31 @@ button:disabled {
 
 .quote .arrow {
   font-size: 0.9em;
+}
+
+.news {
+  margin-top: 1.5rem;
+  padding: 2rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  animation: fadeInUp 0.35s ease-out;
+  text-align: center;
+}
+
+.news-summary {
+  margin: 1.25rem 0 0;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  text-align: center;
 }
 
 @keyframes fadeInUp {

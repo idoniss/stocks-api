@@ -8,6 +8,8 @@ function App() {
   const [quote, setQuote] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [news, setNews] = useState(null)
+  const [newsLoading, setNewsLoading] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -17,6 +19,7 @@ function App() {
     setLoading(true)
     setError(null)
     setQuote(null)
+    setNews(null)
 
     try {
       const res = await fetch(`${API_URL}/stock/${trimmed}`)
@@ -29,6 +32,26 @@ function App() {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleGetNews() {
+    if (!quote) return
+    setNewsLoading(true)
+    setNews(null)
+
+    try {
+      const res = await fetch(`${API_URL}/news/${quote.symbol}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.detail || `Request failed (${res.status})`)
+      }
+      const data = await res.json()
+      setNews(data.summary)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setNewsLoading(false)
     }
   }
 
@@ -63,6 +86,15 @@ function App() {
           </section>
         )
       })()}
+
+      {quote && (
+        <section className="news">
+          <button onClick={handleGetNews} disabled={newsLoading}>
+            {newsLoading ? 'Loading…' : 'Get news summary'}
+          </button>
+          {news && <pre className="news-summary">{news}</pre>}
+        </section>
+      )}
     </main>
   )
 }
