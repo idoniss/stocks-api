@@ -5,7 +5,7 @@ Run:  python news_agent.py
 """
 
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import TypedDict
 
 import requests
@@ -45,14 +45,18 @@ def summarize(state: State):
     symbol = state["symbol"]
     articles = state["articles"]
 
-    headlines_block = "\n".join(
-        f"- {a.get('headline')}: {a.get('summary')}" for a in articles
-    )
+    def format_article(a):
+        ts = a.get("datetime")
+        date_str = datetime.fromtimestamp(ts).strftime("%Y-%m-%d") if ts else "unknown"
+        return f"- [{date_str}] {a.get('headline')}: {a.get('summary')}"
+
+    headlines_block = "\n".join(format_article(a) for a in articles)
 
     prompt = (
         f"Please summarize the recent news about the company with ticker {symbol}. "
         f"Focus on what's relevant to the company itself (not the broader market). "
-        f"Keep it to 3-5 short bullet points.\n\n"
+        f"Keep it to 3-5 short bullet points. "
+        f"Start each bullet with the date in [YYYY-MM-DD] format, based on the dates given with each article.\n\n"
         f"Articles:\n{headlines_block}"
     )
 
