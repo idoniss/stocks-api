@@ -56,7 +56,8 @@ def summarize(state: State):
         f"Please summarize the recent news about the company with ticker {symbol}. "
         f"Focus on what's relevant to the company itself (not the broader market). "
         f"Keep it to 3-5 short bullet points. "
-        f"Start each bullet with the date in [YYYY-MM-DD] format, based on the dates given with each article.\n\n"
+        f"Format each bullet as: '<Month abbrev> <day> — <content>' (for example, 'Apr 22 — Company announced...'). "
+        f"Use the dates given with each article.\n\n"
         f"Articles:\n{headlines_block}"
     )
 
