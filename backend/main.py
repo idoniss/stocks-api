@@ -1,7 +1,9 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import requests
+from langchain_core.messages import HumanMessage
 
 from agent.news_agent import app as news_agent_app
 
@@ -10,9 +12,13 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+class ChatRequest(BaseModel):
+    message: str
 
 FINNHUB_API_KEY = os.environ["FINNHUB_API_KEY"]
 
@@ -45,5 +51,15 @@ def get_stock_price(symbol: str):
 
 @app.get("/news/{symbol}")
 def get_news(symbol: str):
-    result = news_agent_app.invoke({"symbol": symbol})
-    return {"symbol": symbol.upper(), "summary": result["summary"]}
+    result = news_agent_app.invoke(
+        {"messages": [HumanMessage(content=f"Summarize the latest news about {symbol}.")]}
+    )
+    return {"symbol": symbol.upper(), "summary": result["messages"][-1].content}
+
+
+@app.post("/chat")
+def chat(req: ChatRequest):
+    result = news_agent_app.invoke(
+        {"messages": [HumanMessage(content=req.message)]}
+    )
+    return {"reply": result["messages"][-1].content}

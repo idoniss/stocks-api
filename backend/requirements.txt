@@ -3,3 +3,4 @@ uvicorn
 requests
 langgraph
 openai
+langchain-openai
