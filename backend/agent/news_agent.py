@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 from typing import Annotated, TypedDict
 
 import requests
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph
@@ -19,14 +19,21 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 @tool
 def get_news(symbol: str) -> str:
-    """Get recent news articles (last 7 days) about a publicly traded company.
+    """Get recent news headlines (last 7 days) about a publicly traded company.
+
+    Use when: the user asks about news, recent developments, what's happening
+    with a company, or any qualitative update on a stock.
+    Do NOT use for: current price or today's price change — use get_stock_price.
+    Historical prices and news older than 7 days are not available.
 
     Args:
-        symbol: Stock ticker symbol (e.g. "AAPL", "NVDA").
+        symbol: Exchange ticker symbol (e.g. "AAPL", "NVDA"). Use the canonical
+            ticker, not the company name.
 
     Returns:
-        A text block listing recent news articles, one per line, with date,
-        headline, and short summary.
+        A text block of articles, one per line, formatted "<Mon DD>: <headline> — <summary>".
+        Returns "No recent news found for {symbol}." if there are no articles
+        in the last 7 days.
     """
     api_key = os.environ["FINNHUB_API_KEY"]
     today = date.today()
@@ -57,13 +64,22 @@ def get_news(symbol: str) -> str:
 
 @tool
 def get_stock_price(symbol: str) -> str:
-    """Get the current stock price and today's change for a publicly traded company.
+    """Get the current price and today's intraday change for a publicly traded company.
+
+    Use when: the user asks about price, today's change, percent change, or
+    current value of a stock.
+    Do NOT use for: news, qualitative company updates, or historical prices —
+    use get_news for news; historical data is not available from this agent.
 
     Args:
-        symbol: Stock ticker symbol (e.g. "AAPL", "NVDA").
+        symbol: Exchange ticker symbol (e.g. "AAPL", "NVDA"). Use the canonical
+            ticker, not the company name.
 
     Returns:
-        A short string with the current price, absolute change, and percent change.
+        A single-line string formatted "<SYMBOL>: $<price> (change <±N.NN>, <±N.NN>%)".
+        Returns "No price data found for {symbol}." if the ticker is unrecognized.
+        During US market hours: real-time intraday data. Outside market hours:
+        previous close.
     """
     api_key = os.environ["FINNHUB_API_KEY"]
     response = requests.get(
@@ -90,8 +106,26 @@ tools = [get_news, get_stock_price]
 llm = ChatOpenAI(model="gpt-4o-mini").bind_tools(tools)
 
 
+SYSTEM_PROMPT = """<role>
+You are a stocks assistant that helps users understand publicly traded companies. You have tools to fetch live prices and recent news.
+</role>
+
+<behavior>
+- Decide which tools to call based on the user's question. You may call zero, one, or both tools.
+- For news, format each item as a short bullet starting with the date — e.g. "Apr 22 — Company announced...". Default to 3-5 bullets.
+- For prices, answer in one or two short sentences.
+- If a tool returns "No data found" or "No recent news", relay that clearly. Do not fabricate values.
+</behavior>
+
+<tools>
+- get_stock_price(symbol): current price and today's intraday change.
+- get_news(symbol): rolling 7-day news headlines and short summaries.
+</tools>"""
+
+
 def agent(state: State):
-    response = llm.invoke(state["messages"])
+    messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
+    response = llm.invoke(messages)
     return {"messages": [response]}
 
 
