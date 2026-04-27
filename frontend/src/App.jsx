@@ -19,7 +19,9 @@ function App() {
     const ta = textareaRef.current
     if (!ta) return
     ta.style.height = 'auto'
-    ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`
+    const newHeight = Math.min(ta.scrollHeight, 160)
+    ta.style.height = `${newHeight}px`
+    ta.style.overflowY = ta.scrollHeight > 160 ? 'auto' : 'hidden'
   }, [input])
 
   function handleKeyDown(e) {
