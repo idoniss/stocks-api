@@ -142,7 +142,8 @@ form {
   padding-top: 1rem;
 }
 
-input {
+input,
+textarea {
   flex: 1;
   padding: 0.85rem 1rem;
   font-size: 1rem;
@@ -155,11 +156,21 @@ input {
   transition: border-color 0.15s, background 0.15s;
 }
 
-input::placeholder {
+textarea {
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.4;
+  min-height: 2.7rem;
+  max-height: 160px;
+}
+
+input::placeholder,
+textarea::placeholder {
   color: var(--text-dim);
 }
 
-input:focus {
+input:focus,
+textarea:focus {
   border-color: var(--accent);
   background: rgba(99, 102, 241, 0.08);
 }
