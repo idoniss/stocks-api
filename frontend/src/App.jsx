@@ -14,6 +14,16 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
+  useEffect(() => {
+    function setAppHeight() {
+      const h = window.visualViewport?.height ?? window.innerHeight
+      document.documentElement.style.setProperty('--app-height', `${h}px`)
+    }
+    setAppHeight()
+    window.visualViewport?.addEventListener('resize', setAppHeight)
+    return () => window.visualViewport?.removeEventListener('resize', setAppHeight)
+  }, [])
+
   async function handleSubmit(e) {
     e.preventDefault()
     const trimmed = input.trim()
