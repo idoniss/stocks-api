@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from agent.news_agent import app as news_agent_app
 
@@ -15,8 +15,13 @@ app.add_middleware(
 )
 
 
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
 class ChatRequest(BaseModel):
-    message: str
+    messages: list[ChatMessage]
 
 
 @app.get("/health")
@@ -26,7 +31,11 @@ def health():
 
 @app.post("/chat")
 def chat(req: ChatRequest):
-    result = news_agent_app.invoke(
-        {"messages": [HumanMessage(content=req.message)]}
-    )
+    lc_messages = []
+    for m in req.messages:
+        if m.role == "user":
+            lc_messages.append(HumanMessage(content=m.content))
+        elif m.role == "assistant":
+            lc_messages.append(AIMessage(content=m.content))
+    result = news_agent_app.invoke({"messages": lc_messages})
     return {"reply": result["messages"][-1].content}
