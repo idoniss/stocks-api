@@ -20,7 +20,8 @@ function App() {
     if (!trimmed) return
 
     const userMessage = { role: 'user', content: trimmed }
-    setMessages((prev) => [...prev, userMessage])
+    const newMessages = [...messages, userMessage]
+    setMessages(newMessages)
     setInput('')
     setLoading(true)
     setError(null)
@@ -29,7 +30,7 @@ function App() {
       const res = await fetch(`${API_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({ messages: newMessages }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
