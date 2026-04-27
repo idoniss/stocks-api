@@ -21,6 +21,8 @@ body {
   background-attachment: fixed;
   color: var(--text);
   margin: 0;
+  height: 100dvh;
+  overflow: hidden;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -52,10 +54,6 @@ h1 {
   line-height: 1.5;
 }
 
-main:focus-within h1,
-main:focus-within .subtitle {
-  display: none;
-}
 
 .messages {
   flex: 1;
