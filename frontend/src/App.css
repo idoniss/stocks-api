@@ -29,7 +29,7 @@ main {
   display: flex;
   flex-direction: column;
   max-width: 720px;
-  height: 100vh;
+  height: 100dvh;
   margin: 0 auto;
   padding: 1.5rem;
 }
