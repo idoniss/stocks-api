@@ -81,7 +81,7 @@ function App() {
         )}
         {messages.map((m, i) => (
           <div key={i} className={`message ${m.role}`}>
-            <pre>{m.content}</pre>
+            <pre dir="auto">{m.content}</pre>
           </div>
         ))}
         {loading && (
@@ -98,6 +98,7 @@ function App() {
         <textarea
           ref={textareaRef}
           rows={1}
+          dir="auto"
           placeholder="Ask something…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
