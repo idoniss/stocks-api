@@ -40,3 +40,7 @@ jobs:
       - name: Sync dist/ to bucket
         run: |
           gcloud storage rsync frontend/dist gs://stocks-api-frontend-ido --recursive --delete-unmatched-destination-objects
+
+      - name: Disable cache on index.html
+        run: |
+          gcloud storage objects update gs://stocks-api-frontend-ido/index.html --cache-control="no-cache,max-age=0"
