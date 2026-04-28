@@ -2,14 +2,32 @@ import { useState, useRef, useEffect } from 'react'
 import './App.css'
 
 const API_URL = 'https://stocks-api-41681714781.us-central1.run.app'
+const STORAGE_KEY = 'stocks-chats-v1'
+
+function loadChats() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) return JSON.parse(saved)
+  } catch {}
+  return []
+}
 
 function App() {
-  const [messages, setMessages] = useState([])
+  const [chats, setChats] = useState(loadChats)
+  const [activeChatId, setActiveChatId] = useState(() => loadChats()[0]?.id ?? null)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const messagesEndRef = useRef(null)
   const textareaRef = useRef(null)
+
+  const activeChat = chats.find((c) => c.id === activeChatId)
+  const messages = activeChat?.messages ?? []
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(chats))
+  }, [chats])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -50,14 +68,44 @@ function App() {
     }
   }, [])
 
+  function createNewChat() {
+    const id = Date.now().toString()
+    const newChat = { id, title: 'New chat', messages: [] }
+    setChats((prev) => [newChat, ...prev])
+    setActiveChatId(id)
+    setSidebarOpen(false)
+  }
+
+  function selectChat(id) {
+    setActiveChatId(id)
+    setSidebarOpen(false)
+    setError(null)
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     const trimmed = input.trim()
     if (!trimmed) return
 
+    let chat = activeChat
+    if (!chat) {
+      chat = { id: Date.now().toString(), title: trimmed.slice(0, 40), messages: [] }
+      setChats((prev) => [chat, ...prev])
+      setActiveChatId(chat.id)
+    }
+
     const userMessage = { role: 'user', content: trimmed }
-    const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
+    const newMessages = [...chat.messages, userMessage]
+    const isFirstMessage = chat.messages.length === 0
+
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === chat.id
+          ? { ...c, messages: newMessages, title: isFirstMessage ? trimmed.slice(0, 40) : c.title }
+          : c,
+      ),
+    )
+
     setInput('')
     setLoading(true)
     setError(null)
@@ -73,7 +121,12 @@ function App() {
         throw new Error(body.detail || `Request failed (${res.status})`)
       }
       const data = await res.json()
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }])
+      const assistantMessage = { role: 'assistant', content: data.reply }
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === chat.id ? { ...c, messages: [...newMessages, assistantMessage] } : c,
+        ),
+      )
     } catch (err) {
       setError(err.message)
     } finally {
@@ -82,45 +135,70 @@ function App() {
   }
 
   return (
-    <main>
-      <h1>Stocks Chat</h1>
-      <p className="subtitle">Ask about any publicly traded company — prices, recent news, or both.</p>
-
-      <div className="messages">
-        {messages.length === 0 && (
-          <p className="empty-hint">Try: "What's happening with NVDA?" or "Price of AAPL?"</p>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`message ${m.role}`}>
-            <pre dir="auto">{m.content}</pre>
-          </div>
-        ))}
-        {loading && (
-          <div className="message assistant loading-bubble">
-            <span>•</span><span>•</span><span>•</span>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {error && <p className="error">{error}</p>}
-
-      <form onSubmit={handleSubmit}>
-        <textarea
-          ref={textareaRef}
-          rows={1}
-          dir="auto"
-          placeholder="Ask something…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={loading}
-        />
-        <button type="submit" disabled={loading || !input.trim()}>
-          Send
+    <div className="app">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <button className="new-chat-btn" onClick={createNewChat}>
+          + New chat
         </button>
-      </form>
-    </main>
+        <ul className="chat-list">
+          {chats.map((c) => (
+            <li
+              key={c.id}
+              className={`chat-item ${c.id === activeChatId ? 'active' : ''}`}
+              onClick={() => selectChat(c.id)}
+            >
+              {c.title || 'New chat'}
+            </li>
+          ))}
+        </ul>
+      </aside>
+
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
+      <main>
+        <header className="topbar">
+          <button className="menu-btn" onClick={() => setSidebarOpen((o) => !o)} aria-label="Toggle menu">
+            ☰
+          </button>
+          <h1>Stocks Chat</h1>
+        </header>
+
+        <div className="messages">
+          {messages.length === 0 && (
+            <p className="empty-hint">Try: "What's happening with NVDA?" or "Price of AAPL?"</p>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={`message ${m.role}`}>
+              <pre dir="auto">{m.content}</pre>
+            </div>
+          ))}
+          {loading && (
+            <div className="message assistant loading-bubble">
+              <span>•</span><span>•</span><span>•</span>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {error && <p className="error">{error}</p>}
+
+        <form onSubmit={handleSubmit}>
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            dir="auto"
+            placeholder="Ask something…"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={loading}
+          />
+          <button type="submit" disabled={loading || !input.trim()}>
+            Send
+          </button>
+        </form>
+      </main>
+    </div>
   )
 }
 
