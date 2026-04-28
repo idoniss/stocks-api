@@ -32,13 +32,22 @@ function App() {
   }
 
   useEffect(() => {
-    function setAppHeight() {
-      const h = window.visualViewport?.height ?? window.innerHeight
-      document.documentElement.style.setProperty('--app-height', `${h}px`)
+    const vv = window.visualViewport
+    if (!vv) {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
+      return
     }
-    setAppHeight()
-    window.visualViewport?.addEventListener('resize', setAppHeight)
-    return () => window.visualViewport?.removeEventListener('resize', setAppHeight)
+    function update() {
+      document.documentElement.style.setProperty('--app-height', `${vv.height}px`)
+      document.documentElement.style.setProperty('--app-offset', `${vv.offsetTop}px`)
+    }
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
   }, [])
 
   async function handleSubmit(e) {

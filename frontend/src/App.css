@@ -39,6 +39,7 @@ main {
   height: var(--app-height, 100dvh);
   margin: 0 auto;
   padding: 1.5rem;
+  transform: translateY(var(--app-offset, 0px));
 }
 
 h1 {
