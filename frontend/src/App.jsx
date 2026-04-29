@@ -230,8 +230,11 @@ function App() {
               {m.content ? (
                 <pre dir="auto">{m.content}</pre>
               ) : m.pending ? (
-                <div className="loading-bubble">
-                  <span>•</span><span>•</span><span>•</span>
+                <div className="generating">
+                  <span className="generating-label">Generating response</span>
+                  <span className="loading-bubble">
+                    <span>•</span><span>•</span><span>•</span>
+                  </span>
                 </div>
               ) : null}
             </div>
