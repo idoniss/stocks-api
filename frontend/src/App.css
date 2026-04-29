@@ -193,10 +193,22 @@ h1 {
   border: 1px solid var(--card-border);
 }
 
+.message-steps {
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .loading-bubble {
   display: flex;
   gap: 0.25rem;
-  padding: 0.85rem 1rem;
+  padding: 0.25rem 0;
 }
 
 .loading-bubble span {

@@ -82,6 +82,20 @@ function App() {
     setError(null)
   }
 
+  function updateLastAssistant(chatId, updater) {
+    setChats((prev) =>
+      prev.map((c) => {
+        if (c.id !== chatId) return c
+        const lastIdx = c.messages.length - 1
+        if (lastIdx < 0 || c.messages[lastIdx].role !== 'assistant') return c
+        return {
+          ...c,
+          messages: c.messages.map((m, i) => (i === lastIdx ? updater(m) : m)),
+        }
+      }),
+    )
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     const trimmed = input.trim()
@@ -95,12 +109,15 @@ function App() {
     }
 
     const userMessage = { role: 'user', content: trimmed }
-    const newMessages = [...chat.messages, userMessage]
+    const placeholderAssistant = { role: 'assistant', content: '', steps: [], pending: true }
+    const newMessages = [...chat.messages, userMessage, placeholderAssistant]
+    const messagesForRequest = [...chat.messages, userMessage]
     const isFirstMessage = chat.messages.length === 0
+    const chatId = chat.id
 
     setChats((prev) =>
       prev.map((c) =>
-        c.id === chat.id
+        c.id === chatId
           ? { ...c, messages: newMessages, title: isFirstMessage ? trimmed.slice(0, 40) : c.title }
           : c,
       ),
@@ -114,24 +131,58 @@ function App() {
       const res = await fetch(`${API_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: messagesForRequest }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.detail || `Request failed (${res.status})`)
       }
-      const data = await res.json()
-      const assistantMessage = { role: 'assistant', content: data.reply }
-      setChats((prev) =>
-        prev.map((c) =>
-          c.id === chat.id ? { ...c, messages: [...newMessages, assistantMessage] } : c,
-        ),
-      )
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop()
+        for (const part of parts) {
+          if (!part.startsWith('data: ')) continue
+          const event = JSON.parse(part.slice(6))
+          if (event.type === 'tool_call') {
+            updateLastAssistant(chatId, (m) => ({
+              ...m,
+              steps: [...(m.steps || []), { type: 'tool_call', name: event.name, args: event.args }],
+            }))
+          } else if (event.type === 'tool_result') {
+            updateLastAssistant(chatId, (m) => ({
+              ...m,
+              steps: [...(m.steps || []), { type: 'tool_result', name: event.name }],
+            }))
+          } else if (event.type === 'reply') {
+            updateLastAssistant(chatId, (m) => ({ ...m, content: event.content }))
+          } else if (event.type === 'done') {
+            updateLastAssistant(chatId, (m) => ({ ...m, pending: false }))
+          }
+        }
+      }
     } catch (err) {
       setError(err.message)
+      updateLastAssistant(chatId, (m) => ({ ...m, pending: false }))
     } finally {
       setLoading(false)
     }
+  }
+
+  function renderStep(s) {
+    const sym = s.args?.symbol ?? ''
+    if (s.type === 'tool_call') {
+      if (s.name === 'get_news') return `Looking up news for ${sym}…`
+      if (s.name === 'get_stock_price') return `Looking up price for ${sym}…`
+      return `Calling ${s.name}…`
+    }
+    return `Got ${s.name === 'get_news' ? 'news' : s.name === 'get_stock_price' ? 'price' : 'result'}`
   }
 
   return (
@@ -169,14 +220,22 @@ function App() {
           )}
           {messages.map((m, i) => (
             <div key={i} className={`message ${m.role}`}>
-              <pre dir="auto">{m.content}</pre>
+              {m.role === 'assistant' && m.steps?.length > 0 && (
+                <ul className="message-steps">
+                  {m.steps.map((s, j) => (
+                    <li key={j}>{renderStep(s)}</li>
+                  ))}
+                </ul>
+              )}
+              {m.content ? (
+                <pre dir="auto">{m.content}</pre>
+              ) : m.pending ? (
+                <div className="loading-bubble">
+                  <span>•</span><span>•</span><span>•</span>
+                </div>
+              ) : null}
             </div>
           ))}
-          {loading && (
-            <div className="message assistant loading-bubble">
-              <span>•</span><span>•</span><span>•</span>
-            </div>
-          )}
           <div ref={messagesEndRef} />
         </div>
 
