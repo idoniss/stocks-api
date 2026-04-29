@@ -150,7 +150,12 @@ function App() {
         for (const part of parts) {
           if (!part.startsWith('data: ')) continue
           const event = JSON.parse(part.slice(6))
-          if (event.type === 'tool_call') {
+          if (event.type === 'reasoning') {
+            updateLastAssistant(chatId, (m) => ({
+              ...m,
+              reasoning: [...(m.reasoning || []), event.content],
+            }))
+          } else if (event.type === 'tool_call') {
             updateLastAssistant(chatId, (m) => ({
               ...m,
               steps: [...(m.steps || []), { type: 'tool_call', name: event.name, args: event.args }],
@@ -220,6 +225,14 @@ function App() {
           )}
           {messages.map((m, i) => (
             <div key={i} className={`message ${m.role}`}>
+              {m.role === 'assistant' && m.reasoning?.length > 0 && (
+                <details className="message-reasoning" open={m.pending}>
+                  <summary>Reasoning</summary>
+                  {m.reasoning.map((r, j) => (
+                    <pre key={j}>{r}</pre>
+                  ))}
+                </details>
+              )}
               {m.role === 'assistant' && m.steps?.length > 0 && (
                 <ul className="message-steps">
                   {m.steps.map((s, j) => (

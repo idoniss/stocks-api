@@ -36,6 +36,31 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload)}\n\n"
 
 
+def _extract_reasoning(msg) -> str | None:
+    """Pull out a reasoning summary from an AIMessage if the model emitted one."""
+    ak = getattr(msg, "additional_kwargs", {}) or {}
+    reasoning = ak.get("reasoning")
+    if not reasoning:
+        return None
+    texts: list[str] = []
+    items = reasoning if isinstance(reasoning, list) else [reasoning]
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        summary = item.get("summary", [])
+        if isinstance(summary, str):
+            texts.append(summary)
+            continue
+        for s in summary:
+            if isinstance(s, dict):
+                t = s.get("text") or s.get("content")
+                if t:
+                    texts.append(t)
+            elif isinstance(s, str):
+                texts.append(s)
+    return "\n\n".join(texts) if texts else None
+
+
 @app.post("/chat")
 async def chat(req: ChatRequest):
     lc_messages = []
@@ -52,6 +77,9 @@ async def chat(req: ChatRequest):
             for node_name, output in chunk.items():
                 if node_name == "agent":
                     msg = output["messages"][-1]
+                    reasoning = _extract_reasoning(msg)
+                    if reasoning:
+                        yield _sse({"type": "reasoning", "content": reasoning})
                     if getattr(msg, "tool_calls", None):
                         for tc in msg.tool_calls:
                             yield _sse({
