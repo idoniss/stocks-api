@@ -103,7 +103,7 @@ class State(TypedDict):
 
 
 tools = [get_news, get_stock_price]
-llm = ChatOpenAI(model="gpt-4o-mini").bind_tools(tools)
+llm = ChatOpenAI(model="o4-mini", reasoning_effort="low").bind_tools(tools)
 
 
 SYSTEM_PROMPT = """<role>
